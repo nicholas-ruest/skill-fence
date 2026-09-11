@@ -36,3 +36,4 @@ The deterministic gate is fully local. External probes never upgrade a blocked s
 - SHA-256 evidence identity and JSON/Markdown evidence output.
 
 See [the architecture decision](docs/adr/ADR-001-local-first-evidence-gate.md) and [bounded contexts](docs/ddd/skill-release.md).
+The selection evidence is in [the product research brief](docs/research/2026-09-10-product-selection.md).
