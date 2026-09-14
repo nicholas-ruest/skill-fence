@@ -114,9 +114,29 @@ const INJECTION_MARKERS: [&str; 5] = [
 ];
 const DESTRUCTIVE_MARKERS: [&str; 4] = ["rm -rf /", "git push --force", "curl | sh", "curl|sh"];
 
+trait SkillSource {
+    fn read(&self, directory: &Path) -> std::io::Result<String>;
+}
+
+struct FileSystemSkillSource;
+
+impl SkillSource for FileSystemSkillSource {
+    fn read(&self, directory: &Path) -> std::io::Result<String> {
+        fs::read_to_string(directory.join("SKILL.md"))
+    }
+}
+
 pub fn assess(skill: impl AsRef<Path>, comparisons: &[PathBuf]) -> std::io::Result<Assessment> {
-    let skill = skill.as_ref().to_path_buf();
-    let source = fs::read_to_string(skill.join("SKILL.md"))?;
+    assess_with_source(skill.as_ref(), comparisons, &FileSystemSkillSource)
+}
+
+fn assess_with_source(
+    skill: &Path,
+    comparisons: &[PathBuf],
+    skill_source: &impl SkillSource,
+) -> std::io::Result<Assessment> {
+    let skill = skill.to_path_buf();
+    let source = read_skill(skill_source, &skill, "skill")?;
     let lower = source.to_lowercase();
     let mut findings = Vec::new();
     let frontmatter = frontmatter(&source);
@@ -166,18 +186,13 @@ pub fn assess(skill: impl AsRef<Path>, comparisons: &[PathBuf]) -> std::io::Resu
     let skill_fingerprint = fingerprint(&source);
     let duplicate_similarity = comparisons
         .iter()
-        .filter_map(|other| {
-            fs::read_to_string(other.join("SKILL.md"))
-                .ok()
-                .map(|other_source| DuplicateSimilarity {
-                    other_skill: other.clone(),
-                    jaccard_percent: jaccard_percent(
-                        &skill_fingerprint,
-                        &fingerprint(&other_source),
-                    ),
-                })
+        .map(|other| {
+            read_skill(skill_source, other, "comparison").map(|other_source| DuplicateSimilarity {
+                other_skill: other.clone(),
+                jaccard_percent: jaccard_percent(&skill_fingerprint, &fingerprint(&other_source)),
+            })
         })
-        .collect();
+        .collect::<std::io::Result<Vec<_>>>()?;
     Ok(Assessment {
         skill,
         content_sha256: sha256(&source),
@@ -198,6 +213,18 @@ pub fn assess(skill: impl AsRef<Path>, comparisons: &[PathBuf]) -> std::io::Resu
                         .into(),
             },
         ],
+    })
+}
+
+fn read_skill(source: &impl SkillSource, directory: &Path, role: &str) -> std::io::Result<String> {
+    source.read(directory).map_err(|error| {
+        std::io::Error::new(
+            error.kind(),
+            format!(
+                "could not read {role} `{}`: {error}",
+                directory.join("SKILL.md").display()
+            ),
+        )
     })
 }
 
@@ -280,7 +307,26 @@ fn sha256(source: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write;
+    use std::{cell::RefCell, io::Write};
+
+    struct RecordingSkillSource {
+        requested: RefCell<Vec<PathBuf>>,
+        missing: PathBuf,
+    }
+
+    impl SkillSource for RecordingSkillSource {
+        fn read(&self, directory: &Path) -> std::io::Result<String> {
+            self.requested.borrow_mut().push(directory.to_path_buf());
+            if directory == self.missing {
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    "fixture missing",
+                ))
+            } else {
+                Ok("---\nname: safe\ndescription: bounded\n---\nRequest human approval.".into())
+            }
+        }
+    }
 
     fn skill(contents: &str) -> tempfile::TempDir {
         let dir = tempfile::tempdir().unwrap();
@@ -313,6 +359,25 @@ mod tests {
         assert_eq!(
             fingerprint("Alpha beta gamma delta epsilon"),
             fingerprint("alpha beta gamma delta epsilon")
+        );
+    }
+
+    #[test]
+    fn requests_every_comparison_and_propagates_read_failure() {
+        let primary = PathBuf::from("primary");
+        let missing = PathBuf::from("missing");
+        let source = RecordingSkillSource {
+            requested: RefCell::new(Vec::new()),
+            missing: missing.clone(),
+        };
+
+        let error = assess_with_source(&primary, std::slice::from_ref(&missing), &source)
+            .expect_err("an unreadable requested comparison must fail");
+
+        assert!(error.to_string().contains("missing/SKILL.md"));
+        assert_eq!(
+            *source.requested.borrow(),
+            vec![primary.clone(), missing.clone()]
         );
     }
 }

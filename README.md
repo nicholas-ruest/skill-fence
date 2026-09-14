@@ -33,6 +33,7 @@ The deterministic gate is fully local. External probes never upgrade a blocked s
 - Known prompt-injection and destructive-command markers.
 - Explicit human-approval boundary signal.
 - Deterministic token-shingle duplicate similarity against supplied skills.
+- Fail-closed intake when any explicitly supplied comparison cannot be read.
 - SHA-256 evidence identity and JSON/Markdown evidence output.
 
 See [the architecture decision](docs/adr/ADR-001-local-first-evidence-gate.md) and [bounded contexts](docs/ddd/skill-release.md).
