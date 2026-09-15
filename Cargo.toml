@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 description = "Evidence-backed, local-first release gates for AI agent skills"
 license = "Apache-2.0"
+default-run = "skill-fence"
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }

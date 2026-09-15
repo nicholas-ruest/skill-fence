@@ -38,3 +38,11 @@ The deterministic gate is fully local. External probes never upgrade a blocked s
 
 See [the architecture decision](docs/adr/ADR-001-local-first-evidence-gate.md) and [bounded contexts](docs/ddd/skill-release.md).
 The selection evidence is in [the product research brief](docs/research/2026-09-10-product-selection.md).
+
+## Validate architecture evidence
+
+```bash
+cargo run --bin skill-fence-docs -- --root .
+```
+
+This checks every current ADR and DDD artifact for its required schema, live local links, and implementation/test/domain traceability. Add `--completion` to enforce the Product Foundry minimums; it fails closed until the repository has at least 24 substantive Accepted ADRs and 12 substantive DDD artifacts. The validator contract is recorded in [ADR-003](docs/adr/ADR-003-machine-checked-architecture-evidence.md).

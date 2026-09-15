@@ -19,4 +19,5 @@ jobs:
       - run: cargo fmt --check
       - run: cargo test
       - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo run --bin skill-fence-docs -- --root .
       - run: cargo run -- --skill examples/release-ready-skill --out /tmp/evidence.json

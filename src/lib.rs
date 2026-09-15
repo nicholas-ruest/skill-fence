@@ -13,6 +13,10 @@ use std::{
     process::Command,
 };
 
+mod documentation;
+
+pub use documentation::{DocumentationReport, validate_architecture_documentation};
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Severity {
     Info,
