@@ -10,12 +10,13 @@ use std::{
     collections::BTreeSet,
     fs,
     path::{Path, PathBuf},
-    process::Command,
 };
 
 mod documentation;
+mod external;
 
 pub use documentation::{DocumentationReport, validate_architecture_documentation};
+pub use external::{ExternalEvidence, ExternalStatus, probe_redblue, probe_ruvector};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Severity {
@@ -29,21 +30,6 @@ pub struct Finding {
     pub rule: String,
     pub severity: Severity,
     pub message: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum ExternalStatus {
-    NotRequested,
-    Passed,
-    Failed,
-    Unavailable,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ExternalEvidence {
-    pub adapter: String,
-    pub status: ExternalStatus,
-    pub detail: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -204,18 +190,8 @@ fn assess_with_source(
         findings,
         duplicate_similarity,
         external_evidence: vec![
-            ExternalEvidence {
-                adapter: "ruvector".into(),
-                status: ExternalStatus::NotRequested,
-                detail: "Run with --ruvector-probe to invoke the installed ruvector CLI.".into(),
-            },
-            ExternalEvidence {
-                adapter: "metaharness-redblue".into(),
-                status: ExternalStatus::NotRequested,
-                detail:
-                    "Run with --redblue-probe to invoke `metaharness pro redblue run --mock-judge`."
-                        .into(),
-            },
+            external::ruvector_not_requested(),
+            external::redblue_not_requested(),
         ],
     })
 }
@@ -230,40 +206,6 @@ fn read_skill(source: &impl SkillSource, directory: &Path, role: &str) -> std::i
             ),
         )
     })
-}
-
-pub fn probe_ruvector(text: &str) -> ExternalEvidence {
-    probe(
-        "ruvector",
-        Command::new("ruvector").args(["embed", "text", text]),
-    )
-}
-
-pub fn probe_redblue() -> ExternalEvidence {
-    probe(
-        "metaharness-redblue",
-        Command::new("metaharness").args(["pro", "redblue", "run", "--mock-judge"]),
-    )
-}
-
-fn probe(adapter: &str, command: &mut Command) -> ExternalEvidence {
-    match command.output() {
-        Ok(output) if output.status.success() => ExternalEvidence {
-            adapter: adapter.into(),
-            status: ExternalStatus::Passed,
-            detail: String::from_utf8_lossy(&output.stdout).trim().to_string(),
-        },
-        Ok(output) => ExternalEvidence {
-            adapter: adapter.into(),
-            status: ExternalStatus::Failed,
-            detail: String::from_utf8_lossy(&output.stderr).trim().to_string(),
-        },
-        Err(error) => ExternalEvidence {
-            adapter: adapter.into(),
-            status: ExternalStatus::Unavailable,
-            detail: error.to_string(),
-        },
-    }
 }
 
 fn frontmatter(source: &str) -> Option<&str> {

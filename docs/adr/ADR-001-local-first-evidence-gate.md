@@ -22,13 +22,16 @@ Every run emits useful, reproducible evidence offline. Semantic/live quality is 
 
 ## Verification
 
-- [`src/lib.rs`](../../src/lib.rs) contains the deterministic assessment and external-receipt behavior; its unit tests cover bounded and blocked skills.
+- [`src/lib.rs`](../../src/lib.rs) contains the deterministic assessment; its unit tests cover bounded and blocked skills.
+- [`src/external.rs`](../../src/external.rs) contains the external-receipt values, owned process port, and production adapter.
 - [`tests/cli_comparison_boundary.rs`](../../tests/cli_comparison_boundary.rs) exercises a real CLI failure without allowing an incomplete evidence pack.
+- [`tests/cli_external_receipts.rs`](../../tests/cli_external_receipts.rs) exercises successful, rejected, and unavailable external processes through the real adapter.
 - `cargo test`
 - `cargo run -- --skill examples/release-ready-skill --out evidence.json`
 
 ## Implementation and Domain Links
 
-- Implementation and adapter boundary: [`src/lib.rs`](../../src/lib.rs)
+- Deterministic aggregate implementation: [`src/lib.rs`](../../src/lib.rs)
+- External adapter boundary: [`src/external.rs`](../../src/external.rs)
 - CLI application boundary: [`src/main.rs`](../../src/main.rs)
 - Domain context map: [`docs/ddd/skill-release.md`](../ddd/skill-release.md)

@@ -13,8 +13,8 @@ fn repository_documentation_has_machine_checked_schema_and_traceability() {
         String::from_utf8_lossy(&output.stderr)
     );
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("accepted ADRs: 3"), "{stdout}");
-    assert!(stdout.contains("DDD artifacts: 3"), "{stdout}");
+    assert!(stdout.contains("accepted ADRs: 4"), "{stdout}");
+    assert!(stdout.contains("DDD artifacts: 4"), "{stdout}");
 }
 
 #[test]
@@ -26,6 +26,6 @@ fn completion_mode_fails_closed_with_exact_document_shortfall() {
 
     assert!(!output.status.success());
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("accepted ADRs: 3/24"), "{stderr}");
-    assert!(stderr.contains("DDD artifacts: 3/12"), "{stderr}");
+    assert!(stderr.contains("accepted ADRs: 4/24"), "{stderr}");
+    assert!(stderr.contains("DDD artifacts: 4/12"), "{stderr}");
 }

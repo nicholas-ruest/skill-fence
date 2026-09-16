@@ -27,6 +27,8 @@ cargo run -- --skill examples/release-ready-skill --ruvector-probe --redblue-pro
 
 The deterministic gate is fully local. External probes never upgrade a blocked skill to releaseable and their missing executables are emitted as `Unavailable`, not silently ignored.
 
+Every requested external probe emits a process receipt containing the exact executable and arguments, exit code, stdout, stderr, and any spawn error. `Passed` means the process ran and exited zero; `Failed` means it ran without a successful exit; `Unavailable` means it could not be started. The receipt is evidence of that invocation only and never grants release authority.
+
 ## Current MVP checks
 
 - `SKILL.md` and required `name` / `description` frontmatter.
@@ -34,6 +36,7 @@ The deterministic gate is fully local. External probes never upgrade a blocked s
 - Explicit human-approval boundary signal.
 - Deterministic token-shingle duplicate similarity against supplied skills.
 - Fail-closed intake when any explicitly supplied comparison cannot be read.
+- Explicit process receipts for successful, rejected, and unavailable external evaluators.
 - SHA-256 evidence identity and JSON/Markdown evidence output.
 
 See [the architecture decision](docs/adr/ADR-001-local-first-evidence-gate.md) and [bounded contexts](docs/ddd/skill-release.md).
